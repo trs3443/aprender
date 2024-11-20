@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archivos y Registros</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #8e44ad, #3498db);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        table, th, td {
+            border: 1px solid #fff;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #34495e;
+        }
+
+        td {
+            background-color: #2c3e50;
+        }
+
+        .file-upload-section {
+            margin-top: 20px;
+        }
+
+        .file-upload-section input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            background-color: rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 1rem;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            background-color: #2ecc71;
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #27ae60;
+        }
+
+        .file-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-item a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .file-item a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Registros Ingresados</h2>
+
+        <!-- Tabla donde se mostrarán los registros -->
+        <table id="registrosTable">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>País</th>
+                    <th>Provincia</th>
+                    <th>Categoría</th>
+                    <th>Descripción</th>
+                </tr>
+            </thead>
+            <tbody id="registrosList">
+                <!-- Los registros se agregarán aquí dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="container">
+        <h2>Subir Archivos</h2>
+
+        <!-- Subir Archivos -->
+        <div class="file-upload-section">
+            <h3>Subir Archivos</h3>
+            <form id="fileUploadForm">
+                <input type="file" id="fileInput" name="fileInput" multiple required>
+                <button type="submit">Subir Archivos</button>
+            </form>
+        </div>
+
+        <!-- Cuadro Comparativo -->
+        <h3>Archivos Subidos</h3>
+        <table id="fileTable">
+            <thead>
+                <tr>
+                    <th>Nombre del Archivo</th>
+                    <th>Tipo de Archivo</th>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="fileList">
+                <!-- Los archivos se agregarán aquí dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Recuperar los registros desde LocalStorage
+        const registros = JSON.parse(localStorage.getItem('registros')) || [];
+
+        // Obtener el elemento donde se insertarán los registros
+        const registrosList = document.getElementById('registrosList');
+
+        // Si existen registros, agregar cada uno a la tabla
+        if (registros.length > 0) {
+            registros.forEach(registro => {
+                const row = `
+                    <tr>
+                        <td>${registro.nombre}</td>
+                        <td>${registro.apellido}</td>
+                        <td>${registro.pais}</td>
+                        <td>${registro.provincia}</td>
+                        <td>${registro.categoria}</td>
+                        <td>${registro.descripcion}</td>
+                    </tr>
+                `;
+                registrosList.innerHTML += row;
+            });
+        } else {
+            // Si no hay registros, mostrar un mensaje
+            registrosList.innerHTML = '<tr><td colspan="6">No hay registros disponibles.</td></tr>';
+        }
+
+        // Obtener archivos del LocalStorage
+        function loadFiles() {
+            const filesData = JSON.parse(localStorage.getItem('uploadedFiles')) || [];
+
+            const fileListElement = document.getElementById('fileList');
+            fileListElement.innerHTML = ''; // Limpiar lista antes de agregar
+
+            filesData.forEach(fileData => {
+                const fileRow = `
+                    <tr>
+                        <td>${fileData.name}</td>
+                        <td>${fileData.type}</td>
+                        <td>${fileData.userName} ${fileData.userLastName}</td>
+                        <td><a href="${fileData.url}" download>Descargar</a></td>
+                    </tr>
+                `;
+                fileListElement.innerHTML += fileRow;
+            });
+        }
+
+        // Subir archivos y guardarlos en el LocalStorage
+        document.getElementById('fileUploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+            const fileListElement = document.getElementById('fileList');
+
+            let filesData = JSON.parse(localStorage.getItem('uploadedFiles')) || [];
+
+            // Obtener el nombre y apellido del usuario
+            const nombreUsuario = prompt("Ingresa tu nombre:");
+            const apellidoUsuario = prompt("Ingresa tu apellido:");
+
+            // Guardar los archivos subidos
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const fileType = file.name.split('.').pop().toLowerCase();
+                let fileTypeText = 'Archivo';
+                let fileIcon = '';
+
+                // Determinar el tipo de archivo
+                switch (fileType) {
+                    case 'pdf':
+                        fileTypeText = 'PDF';
+                        break;
+                    case 'docx':
+                        fileTypeText = 'Word';
+                        break;
+                    case 'pptx':
+                        fileTypeText = 'PowerPoint';
+                        break;
+                    case 'mp4':
+                        fileTypeText = 'Video';
+                        break;
+                    default:
+                        fileTypeText = 'Archivo Desconocido';
+                }
+
+                const fileURL = URL.createObjectURL(file);
+                const fileData = {
+                    name: file.name,
+                    type: fileTypeText,
+                    url: fileURL,
+                    userName: nombreUsuario,
+                    userLastName: apellidoUsuario
+                };
+
+                // Agregar archivo al LocalStorage
+                filesData.push(fileData);
+            }
+
+            localStorage.setItem('uploadedFiles', JSON.stringify(filesData));
+
+            // Recargar la lista de archivos
+            loadFiles();
+
+            // Limpiar el campo de archivos después de subir
+            fileInput.value = '';
+        });
+
+        // Cargar archivos al cargar la página
+        loadFiles();
+    </script>
+</body>
+</html>
